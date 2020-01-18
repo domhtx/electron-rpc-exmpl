@@ -1,20 +1,31 @@
 /**
  * Entry point of the Election app.
  */
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
 import * as url from 'url';
+import { serve, ExampleRPCMethods } from '@/rpc';
 
 let mainWindow: Electron.BrowserWindow | null;
 
 function createWindow(): void {
+    class RPCMainImpl implements ExampleRPCMethods {
+        async helloWorld(): Promise<string> {
+            return "I am a string from IpcMain.";
+        }
+    }
+
+    const impl = new RPCMainImpl();
+    serve(ipcMain, impl);
+
     // Create the browser window.
     mainWindow = new BrowserWindow({
         height: 600,
         width: 800,
         webPreferences: {
             webSecurity: false,
-            devTools: process.env.NODE_ENV === 'production' ? false : true
+            devTools: process.env.NODE_ENV === 'production' ? false : true,
+            nodeIntegration: true,
         }
     });
 
@@ -34,6 +45,8 @@ function createWindow(): void {
         // when you should delete the corresponding element.
         mainWindow = null;
     });
+
+    mainWindow.webContents.openDevTools()
 }
 
 // This method will be called when Electron has finished
